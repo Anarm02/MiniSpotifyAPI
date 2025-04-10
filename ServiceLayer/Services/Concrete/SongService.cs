@@ -153,45 +153,7 @@ namespace ServiceLayer.Services.Concrete
 			return file.Properties.Duration;
 		}
 
-		public async Task<List<SongDto>> GetSongsByArtistName(string artistName)
-		{
-			var artist = await _userManager.Users.FirstOrDefaultAsync(x => x.FullName == artistName);
-			if (artist == null)
-				return new List<SongDto>();
-
-			var songs = await _unitOfWork.GetRepository<Song>()
-				.GetAllAsync(x => !x.IsDeleted && x.Artists.Any(a => a.Id == artist.Id),
-							 include: q => q.Include(x => x.Artists));
-
-			List<SongDto> songDtos = new List<SongDto>();
-			foreach (var song in songs)
-			{
-				var map = _mapper.Map<SongDto>(song);
-				map.ArtistNames = song.Artists.Select(a => a.FullName).ToList();
-				songDtos.Add(map);
-			}
-			return songDtos;
-		}
-
-		public async Task<List<SongDto>> GetSongByNameAsync(string name)
-		{
-			var songs = await _unitOfWork.GetRepository<Song>().GetAllAsync(
-				x => !x.IsDeleted && x.Title.ToLower().Contains(name.ToLower()),
-				include: q => q.Include(x => x.Artists));
-
-			if (songs == null || songs.Count == 0)
-				throw new Exception("Bu adda mahnı yoxdu");
-
-			List<SongDto> dtos = new List<SongDto>();
-			foreach (var song in songs)
-			{
-				var map = _mapper.Map<SongDto>(song);
-				map.ArtistNames = song.Artists.Select(a => a.FullName).ToList();
-				dtos.Add(map);
-			}
-
-			return dtos;
-		}
+		
 		public async Task<SongDto> UpdateSongAsync(UpdateSongDto updateSongDto,ClaimsPrincipal user)
 		{
 			var currentUser = await _userManager.GetUserAsync(user);

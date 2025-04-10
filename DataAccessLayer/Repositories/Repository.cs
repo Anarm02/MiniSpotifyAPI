@@ -1,4 +1,5 @@
 ﻿using DataAccessLayer.Context;
+using EntityLayer.Entities;
 using EntityLayer.Entities.Common;
 using Microsoft.EntityFrameworkCore;
 using System;

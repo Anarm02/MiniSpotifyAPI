@@ -161,7 +161,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Playlists");
+                    b.ToTable("Playlists", (string)null);
                 });
 
             modelBuilder.Entity("EntityLayer.Entities.Song", b =>
@@ -195,7 +195,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Songs");
+                    b.ToTable("Songs", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -313,7 +313,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("SongsId");
 
-                    b.ToTable("PlaylistSong");
+                    b.ToTable("PlaylistSong", (string)null);
                 });
 
             modelBuilder.Entity("SongArtist", b =>
@@ -328,7 +328,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("SongId");
 
-                    b.ToTable("SongArtist");
+                    b.ToTable("SongArtist", (string)null);
                 });
 
             modelBuilder.Entity("EntityLayer.Entities.Playlist", b =>

@@ -14,6 +14,7 @@ namespace ServiceLayer.Mappers
 		public PlaylistProfile()
 		{
 			CreateMap<PlaylistDto ,Playlist>().ReverseMap();
+			CreateMap<UpdatePlaylistDto ,Playlist>().ReverseMap();
 		}
 	}
 }

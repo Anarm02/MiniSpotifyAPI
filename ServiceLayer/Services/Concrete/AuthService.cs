@@ -91,8 +91,8 @@ namespace ServiceLayer.Services.Concrete
 			//	return "Email doğrulanmayıb!";
 			var roles = await userManager.GetRolesAsync(user);
 			var token =  tokenService.GenerateToken(user,roles);
-			
-			return $"Access Token:'{token.AccessToken}'\n Refresh Token:'{token.RefreshToken}'";
+			string rolesString = string.Join(", ", roles);
+			return $"Access Token:'{token.AccessToken}'\n Refresh Token:'{token.RefreshToken}' \n Full Name:'{user.FullName}' \n Role:'{rolesString}' \n Id:'{user.Id}'";
 		}
 		private async Task SendVerificationEmail(string email, string verificationLink)
 		{
@@ -114,6 +114,11 @@ namespace ServiceLayer.Services.Concrete
 			mailMessage.To.Add(email);
 			await smtpClient.SendMailAsync(mailMessage);
 
+		}
+
+		public async Task LogoutAsync()
+		{
+			await signInManager.SignOutAsync();
 		}
 	}
 }

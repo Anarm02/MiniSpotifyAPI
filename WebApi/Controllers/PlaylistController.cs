@@ -59,6 +59,7 @@ namespace WebApi.Controllers
 				return BadRequest(ex.Message);
 			}
 		}
+		[Authorize]
 		[HttpPut]
 		public async Task<IActionResult> UpdatePlaylist(UpdatePlaylistDto playlistDto)
 		{

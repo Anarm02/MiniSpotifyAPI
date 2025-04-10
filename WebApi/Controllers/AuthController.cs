@@ -10,7 +10,7 @@ namespace WebApi.Controllers
 	[ApiController]
 	public class AuthController : ControllerBase
 	{
-	  private readonly IAuthService authService;
+		private readonly IAuthService authService;
 
 		public AuthController(IAuthService authService)
 		{
@@ -25,17 +25,33 @@ namespace WebApi.Controllers
 
 			return BadRequest(result);
 		}
+
 		[HttpGet("verify-email")]
 		public async Task<IActionResult> VerifyEmail(string userId, string token)
 		{
 			var result = await authService.VerifyEmailAsync(userId, token);
 			return result.Contains("uğurla") ? Ok(result) : BadRequest(result);
 		}
+
+		[HttpPost("Logout")]
+		public async Task<IActionResult> Logout()
+		{
+			try
+			{
+				await authService.LogoutAsync();
+				return Ok("Hesabdan ugurla cixildi");
+			}
+			catch (Exception ex)
+			{
+				return BadRequest(ex.Message);
+			}
+		}
+
 		[HttpPost("Login")]
 		public async Task<IActionResult> Login(LoginDto loginDto)
 		{
-			var result=await authService.LoginAsync(loginDto);
-			if(result.Contains("Token"))
+			var result = await authService.LoginAsync(loginDto);
+			if (result.Contains("Token"))
 				return Ok(result);
 			return BadRequest(result);
 		}

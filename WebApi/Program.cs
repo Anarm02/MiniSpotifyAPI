@@ -1,6 +1,7 @@
 ﻿using DataAccessLayer.Extensions;
 using EntityLayer.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using ServiceLayer.Extensions;
 using System.Text.Json.Serialization;
@@ -55,6 +56,7 @@ namespace WebApi
 			});
 			builder.Services.AddDalExtension(builder.Configuration);
 			builder.Services.AddServiceLayer(builder.Configuration);
+			builder.Services.AddCors();
 			var app = builder.Build();
 		    using (var scope = app.Services.CreateScope())
 			{
@@ -73,7 +75,12 @@ namespace WebApi
 				app.UseSwaggerUI();
 				app.UseDeveloperExceptionPage();
 			}
+			app.UseCors(opt => {
+				opt.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:5174", "http://localhost:5173");
+			});
 			app.UseStaticFiles();
+
+
 			app.UseHttpsRedirection();
 			app.UseAuthentication();
 			app.UseAuthorization();

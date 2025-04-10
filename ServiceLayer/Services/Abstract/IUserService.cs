@@ -11,5 +11,7 @@ namespace ServiceLayer.Services.Abstract
 	{
 		Task<List<UserDto>> GetAllUsers();
 		Task<UserDto> EditUser(EditUserDto editUser);
+		Task<bool> ChangeUserRolesAsync(string userId, List<string> newRoles);
+		Task RemoveUser(string userId);
 	}
 }

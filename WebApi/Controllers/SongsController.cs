@@ -69,26 +69,7 @@ namespace WebApi.Controllers
 				return BadRequest("Bu ifaçının mahnısı yoxdu");
 			return Ok(songs);
 		}
-		[HttpGet("[action]/{name}")]
-		public async Task<IActionResult> GetSongsByArtistName(string name)
-		{
-			var songs = await _songService.GetSongsByArtistName(name);
-			if (songs == null || songs.Count == 0)
-				return BadRequest("Bu ifaçının mahnısı yoxdu");
-			return Ok(songs);
-		}
-		[HttpGet("[action]")]
-		public async Task<IActionResult> GetSongByName(string name)
-		{
-			try
-			{
-				var song = await _songService.GetSongByNameAsync(name);
-				return Ok(song);
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ex.Message);
-			}
-		}
+		
+
 	}
 }

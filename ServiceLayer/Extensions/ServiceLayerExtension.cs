@@ -27,6 +27,7 @@ namespace ServiceLayer.Extensions
 			services.AddScoped<IUserService, UserService>();
 			services.AddScoped<ISongService,SongService>();
 			services.AddScoped<IPlaylistService, PlaylistService>();
+			services.AddScoped<ISearchService, SearchService>();
 			services.AddIdentity<AppUser, AppRole>().AddRoles<AppRole>().AddEntityFrameworkStores<AppDbContext>().AddDefaultTokenProviders();
 			var assembly = Assembly.GetExecutingAssembly();
 			services.AddAutoMapper(assembly);
@@ -45,6 +46,7 @@ namespace ServiceLayer.Extensions
 					ValidateLifetime = true,
 					ValidateIssuerSigningKey = true,
 					IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:SigningKey"]))
+				
 				};
 			});
 			services.AddHttpContextAccessor();

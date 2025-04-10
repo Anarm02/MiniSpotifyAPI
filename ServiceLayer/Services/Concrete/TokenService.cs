@@ -59,6 +59,7 @@ namespace ServiceLayer.Services.Concrete
 
 			return new TokenResponseDto()
 			{
+				
 				AccessToken = accessToken,
 				TokenExpirationDate = tokenExp,
 				RefreshTokenExpirationDate = refreshTokenExp,

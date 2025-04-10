@@ -12,6 +12,7 @@ namespace ServiceLayer.Services.Abstract
 		Task<string> Register(RegisterDto registerDto);
 		Task<string> LoginAsync(LoginDto model);
 		Task<string> VerifyEmailAsync(string userId, string token);
+		Task LogoutAsync();
 		
 	}
 }
