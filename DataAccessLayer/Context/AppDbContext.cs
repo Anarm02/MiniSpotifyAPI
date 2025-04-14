@@ -30,7 +30,10 @@ namespace DataAccessLayer.Context
 					"SongArtist",
 					r => r.HasOne<AppUser>().WithMany().HasForeignKey("ArtistId"),
 					l => l.HasOne<Song>().WithMany().HasForeignKey("SongId"));
+			
 		}
+
+
 
 	}
 }

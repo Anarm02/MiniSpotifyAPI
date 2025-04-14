@@ -3,6 +3,7 @@ using DataAccessLayer.UnitOfWorks;
 using EntityLayer.DTOs.SongDtos;
 using EntityLayer.DTOs.UserDtos;
 using EntityLayer.Entities;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -21,12 +22,14 @@ namespace ServiceLayer.Services.Concrete
 		private readonly IHttpContextAccessor _contextAccessor;
 		private readonly IMapper mapper;
 		private readonly IUnitOfWork _unitOfWork;
-		public UserService(UserManager<AppUser> userManager, IHttpContextAccessor contextAccessor, IMapper mapper, IUnitOfWork unitOfWork)
+		private readonly IWebHostEnvironment _webHostEnvironment;
+		public UserService(UserManager<AppUser> userManager, IHttpContextAccessor contextAccessor, IMapper mapper, IUnitOfWork unitOfWork, IWebHostEnvironment webHostEnvironment)
 		{
 			_userManager = userManager;
 			_contextAccessor = contextAccessor;
 			this.mapper = mapper;
 			_unitOfWork = unitOfWork;
+			_webHostEnvironment = webHostEnvironment;
 		}
 
 		public async Task<List<UserDto>> GetAllUsers()
@@ -65,44 +68,90 @@ namespace ServiceLayer.Services.Concrete
 		}
 		public async Task RemoveUser(string userId)
 		{
-			// Cari istifadəçini al və admin yoxlamasını et.
+			
 			var currentUser = await _userManager.GetUserAsync(_contextAccessor.HttpContext.User);
 			if (!await _userManager.IsInRoleAsync(currentUser, "Admin"))
 			{
 				throw new UnauthorizedAccessException("Rol dəyişikliyi etmək üçün admin hüququna malik deyilsiniz.");
 			}
 
-			// Silinəcək istifadəçini tap.
+			
 			var user = await _userManager.FindByIdAsync(userId);
 			if (user == null)
-				throw new Exception("Istifadeci tapilmadi");
+				throw new Exception("İstifadəçi tapılmadı");
 
-			// İstifadəçiyə aid mahnıları tap və sil.
+			
 			var userSongs = await _unitOfWork.GetRepository<Song>()
-	.GetAllAsync(x => x.Artists.Any(a => a.Id.ToString() == userId));
+				.GetAllAsync(
+					x => x.Artists.Any(a => a.Id.ToString() == userId),
+					include: query => query.Include(x => x.Playlists)
+				);
 
 			if (userSongs != null && userSongs.Any())
 			{
 				foreach (var song in userSongs)
 				{
-				await	_unitOfWork.GetRepository<Song>().DeleteAsync(song);
+					
+					if (!string.IsNullOrEmpty(song.FilePath))
+					{
+						var relativePath = song.FilePath.TrimStart('/');
+						var absolutePath = Path.Combine(_webHostEnvironment.WebRootPath, relativePath);
+						if (File.Exists(absolutePath))
+						{
+							File.Delete(absolutePath);
+						}
+					}
+
+					
+					foreach (var playlist in song.Playlists.ToList())
+					{
+						playlist.Songs.Remove(song);
+						await _unitOfWork.GetRepository<Playlist>().UpdateAsync(playlist);
+					}
+
+					
+					await _unitOfWork.GetRepository<Song>().DeleteAsync(song);
 				}
 			}
 
-			// İstifadəçiyə aid playlistləri tap və sil.
-			var userPlaylists = await _unitOfWork.GetRepository<Playlist>().GetAllAsync(x=>x.UserId.ToString()==userId);
+			
+			var userPlaylists = await _unitOfWork.GetRepository<Playlist>()
+				.GetAllAsync(
+					x => x.UserId.ToString() == userId,
+					include: query => query.Include(p => p.Songs)
+				);
+
 			if (userPlaylists != null && userPlaylists.Any())
 			{
 				foreach (var playlist in userPlaylists)
 				{
-				await	_unitOfWork.GetRepository<Playlist>().DeleteAsync(playlist);
+				
+					foreach (var song in playlist.Songs.ToList())
+					{
+						song.Playlists.Remove(playlist);
+						await _unitOfWork.GetRepository<Song>().UpdateAsync(song);
+					}
+
+					
+					await _unitOfWork.GetRepository<Playlist>().DeleteAsync(playlist);
 				}
 			}
 
-			// İstifadəçini sil və bütün əməliyyatları yaddaşa yaz.
-			await _userManager.DeleteAsync(user);
+			
+			await _unitOfWork.SaveAsynsc();
+
+			var identityResult = await _userManager.DeleteAsync(user);
+			if (!identityResult.Succeeded)
+			{
+				throw new Exception("İstifadəçi silinərkən xəta baş verdi.");
+			}
+
 			await _unitOfWork.SaveAsynsc();
 		}
+
+
+
+
 
 
 		public async Task<bool> ChangeUserRolesAsync(string userId, List<string> newRoles)
