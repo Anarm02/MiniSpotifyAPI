@@ -20,16 +20,18 @@ namespace ServiceLayer.Services.Concrete
 	{
 		private readonly UserManager<AppUser> _userManager;
 		private readonly IHttpContextAccessor _contextAccessor;
+		private readonly RoleManager<AppRole> _roleManager;
 		private readonly IMapper mapper;
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly IWebHostEnvironment _webHostEnvironment;
-		public UserService(UserManager<AppUser> userManager, IHttpContextAccessor contextAccessor, IMapper mapper, IUnitOfWork unitOfWork, IWebHostEnvironment webHostEnvironment)
+		public UserService(UserManager<AppUser> userManager, IHttpContextAccessor contextAccessor, IMapper mapper, IUnitOfWork unitOfWork, IWebHostEnvironment webHostEnvironment, RoleManager<AppRole> roleManager)
 		{
 			_userManager = userManager;
 			_contextAccessor = contextAccessor;
 			this.mapper = mapper;
 			_unitOfWork = unitOfWork;
 			_webHostEnvironment = webHostEnvironment;
+			_roleManager = roleManager;
 		}
 
 		public async Task<List<UserDto>> GetAllUsers()
@@ -178,6 +180,14 @@ namespace ServiceLayer.Services.Concrete
 				throw new Exception("Yeni rolların təyin olunması zamanı xəta baş verdi.");
 			}
 			return true;
+		}
+
+		public async Task<List<string>> GetAllRolesAsync()
+		{
+			var roles = await _roleManager.Roles.Select(r=>r.Name).ToListAsync();
+			if (roles == null)
+				throw new Exception("Rollar tapilmadi");
+			return roles;
 		}
 
 		

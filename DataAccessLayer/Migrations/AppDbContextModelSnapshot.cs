@@ -100,6 +100,9 @@ namespace DataAccessLayer.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("ProfileImageId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("RefreshToken")
                         .HasColumnType("nvarchar(max)");
 
@@ -126,13 +129,65 @@ namespace DataAccessLayer.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
+                    b.HasIndex("ProfileImageId")
+                        .IsUnique()
+                        .HasFilter("[ProfileImageId] IS NOT NULL");
+
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("EntityLayer.Entities.Photo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DeletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ImageType")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("PlaylistId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SongId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlaylistId");
+
+                    b.HasIndex("SongId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Images");
                 });
 
             modelBuilder.Entity("EntityLayer.Entities.Playlist", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CoverImageId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")
@@ -159,15 +214,22 @@ namespace DataAccessLayer.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CoverImageId")
+                        .IsUnique()
+                        .HasFilter("[CoverImageId] IS NOT NULL");
+
                     b.HasIndex("UserId");
 
-                    b.ToTable("Playlists", (string)null);
+                    b.ToTable("Playlists");
                 });
 
             modelBuilder.Entity("EntityLayer.Entities.Song", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ArtworkImageId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")
@@ -195,7 +257,11 @@ namespace DataAccessLayer.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Songs", (string)null);
+                    b.HasIndex("ArtworkImageId")
+                        .IsUnique()
+                        .HasFilter("[ArtworkImageId] IS NOT NULL");
+
+                    b.ToTable("Songs");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -313,7 +379,7 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("SongsId");
 
-                    b.ToTable("PlaylistSong", (string)null);
+                    b.ToTable("PlaylistSong");
                 });
 
             modelBuilder.Entity("SongArtist", b =>
@@ -328,18 +394,66 @@ namespace DataAccessLayer.Migrations
 
                     b.HasIndex("SongId");
 
-                    b.ToTable("SongArtist", (string)null);
+                    b.ToTable("SongArtist");
+                });
+
+            modelBuilder.Entity("EntityLayer.Entities.AppUser", b =>
+                {
+                    b.HasOne("EntityLayer.Entities.Photo", "ProfileImage")
+                        .WithOne()
+                        .HasForeignKey("EntityLayer.Entities.AppUser", "ProfileImageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ProfileImage");
+                });
+
+            modelBuilder.Entity("EntityLayer.Entities.Photo", b =>
+                {
+                    b.HasOne("EntityLayer.Entities.Playlist", "Playlist")
+                        .WithMany()
+                        .HasForeignKey("PlaylistId");
+
+                    b.HasOne("EntityLayer.Entities.Song", "Song")
+                        .WithMany()
+                        .HasForeignKey("SongId");
+
+                    b.HasOne("EntityLayer.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Playlist");
+
+                    b.Navigation("Song");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EntityLayer.Entities.Playlist", b =>
                 {
+                    b.HasOne("EntityLayer.Entities.Photo", "CoverImage")
+                        .WithOne()
+                        .HasForeignKey("EntityLayer.Entities.Playlist", "CoverImageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("EntityLayer.Entities.AppUser", "User")
                         .WithMany("Playlists")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("CoverImage");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("EntityLayer.Entities.Song", b =>
+                {
+                    b.HasOne("EntityLayer.Entities.Photo", "ArtworkImage")
+                        .WithOne()
+                        .HasForeignKey("EntityLayer.Entities.Song", "ArtworkImageId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ArtworkImage");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

@@ -13,5 +13,6 @@ namespace EntityLayer.DTOs.SongDtos
 		public string FilePath { get; set; }
 		public TimeSpan Duration { get; set; }
 		public List<string> ArtistNames { get; set; }
+		public string? ImagePath { get; set; }
 	}
 }

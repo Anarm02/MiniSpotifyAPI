@@ -15,6 +15,7 @@ namespace WebApi.Controllers
 			_searchService = searchService;
 		}
 
+
 		[HttpGet]
 		public async Task<IActionResult> Search([FromQuery] string query)
 		{
@@ -23,15 +24,10 @@ namespace WebApi.Controllers
 				return BadRequest("Axtarış üçün sorğu daxil edin.");
 			}
 
-			try
-			{
+			
 				var result = await _searchService.SearchAsync(query);
 				return Ok(result);
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ex.Message);
-			}
+			
 		}
 	}
 }

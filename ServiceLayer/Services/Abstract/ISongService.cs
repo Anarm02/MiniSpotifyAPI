@@ -15,7 +15,7 @@ namespace ServiceLayer.Services.Abstract
 		Task<string> SaveFileAsync(IFormFile file);
 		Task<List<SongDto>> GetAllSongsAsync();
 		Task<SongDto> GetSongByIdAsync(Guid id);
-		Task<SongDto> UploadSongAsync(IFormFile file, string title, ClaimsPrincipal user, IEnumerable<string> additionalArtistNames = null);
+		Task<SongDto> UploadSongAsync(CreateSongDto createSongDto, ClaimsPrincipal user);
 		Task<List<SongDto>> GetSongByArtist(Guid artistId);
 		Task RemoveSong(Guid id,ClaimsPrincipal user);
 	}

@@ -2,10 +2,15 @@
 using DataAccessLayer.UnitOfWorks;
 using EntityLayer.DTOs.SongDtos;
 using EntityLayer.Entities;
+using EntityLayer.Enums;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using ServiceLayer.Exceptions;
+using ServiceLayer.Helpers.ImageHelpers;
+using ServiceLayer.RedisCache;
 using ServiceLayer.Services.Abstract;
 using System;
 using System.Collections.Generic;
@@ -24,35 +29,50 @@ namespace ServiceLayer.Services.Concrete
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly IMapper _mapper;
 		private readonly UserManager<AppUser> _userManager;
+		private readonly IImageHelper _imageHelper;
+		private readonly IRedisCacheService _cache;
+		private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(5);
 
-		public SongService(IWebHostEnvironment webHostEnvironment, IUnitOfWork unitOfWork, IMapper mapper, UserManager<AppUser> userManager)
+		public SongService(IWebHostEnvironment webHostEnvironment, IUnitOfWork unitOfWork, IMapper mapper, UserManager<AppUser> userManager, IImageHelper imageHelper, IRedisCacheService cache)
 		{
 			_webHostEnvironment = webHostEnvironment;
 			_unitOfWork = unitOfWork;
 			_mapper = mapper;
 			_userManager = userManager;
+			_imageHelper = imageHelper;
+			_cache = cache;
 		}
 
 		public async Task<List<SongDto>> GetAllSongsAsync()
 		{
+			const string cacheKey = "songs_all";
+			var cached = await _cache.GetAsync<List<SongDto>>(cacheKey);
+			if(cached != null)
+				return cached;
+			
 			var songs = await _unitOfWork.GetRepository<Song>()
-				.GetAllAsync(x => !x.IsDeleted, include: q => q.Include(x => x.Artists));
+				.GetAllAsync(x => !x.IsDeleted, include: q => q.Include(x => x.Artists).Include(x=>x.ArtworkImage));
 
 			List<SongDto> songDtos = new List<SongDto>();
 			foreach (var song in songs)
 			{
 				var map = _mapper.Map<SongDto>(song);
 				map.ArtistNames = song.Artists.Select(a => a.FullName).ToList();
+				map.ImagePath = song?.ArtworkImage?.Url;
 				songDtos.Add(map);
 			}
+
+			await _cache.SetAsync(cacheKey, songDtos, _cacheDuration);
+
 			return songDtos;
 		}
 
 		public async Task<SongDto> GetSongByIdAsync(Guid id)
 		{
 			var song = await _unitOfWork.GetRepository<Song>()
-				.GetAsync(x => !x.IsDeleted && x.Id == id, include: q => q.Include(x => x.Artists));
+				.GetAsync(x => !x.IsDeleted && x.Id == id, include: q => q.Include(x => x.Artists).Include(x=>x.ArtworkImage));
 			var map = _mapper.Map<SongDto>(song);
+			map.ImagePath= song?.ArtworkImage?.Url;
 			map.ArtistNames = song.Artists.Select(a => a.FullName).ToList();
 			return map;
 		}
@@ -94,12 +114,12 @@ namespace ServiceLayer.Services.Concrete
 			return $"/uploads/songs/{uniqueFileName}";
 		}
 
-		public async Task<SongDto> UploadSongAsync(IFormFile file, string title, ClaimsPrincipal user, IEnumerable<string> additionalArtistNames = null)
+		public async Task<SongDto> UploadSongAsync(CreateSongDto createSongDto, ClaimsPrincipal user)
 		{
-			if (string.IsNullOrWhiteSpace(title))
+			if (string.IsNullOrWhiteSpace(createSongDto.Title))
 				throw new Exception("Mahniya ad verilmeyib");
 
-			var filePath = await SaveFileAsync(file);
+			var filePath = await SaveFileAsync(createSongDto.MusicFile);
 			var duration = GetMp3Duration(filePath);
 			var uploader = await _userManager.GetUserAsync(user);
 			if (uploader == null)
@@ -107,9 +127,9 @@ namespace ServiceLayer.Services.Concrete
 
 			var artists = new List<AppUser> { uploader };
 
-			if (additionalArtistNames != null)
+			if (createSongDto.additionalArtistNames != null)
 			{
-				foreach (var artistName in additionalArtistNames)
+				foreach (var artistName in createSongDto.additionalArtistNames)
 				{
 					if (!string.IsNullOrWhiteSpace(artistName))
 					{
@@ -128,21 +148,28 @@ namespace ServiceLayer.Services.Concrete
 				}
 			}
 
-				Song song = new Song
-				{
-					Title = title,
-					FilePath = filePath,
-					Duration = duration,
-					Artists = artists
-				};
+			Song song = new Song
+			{
+				Title = createSongDto.Title,
+				FilePath = filePath,
+				Duration = duration,
+				Artists = artists
+			};
 
-				await _unitOfWork.GetRepository<Song>().AddAsync(song);
-				await _unitOfWork.SaveAsynsc();
+			if (createSongDto.ArtworkFile != null)
+			{
+				var image = await _imageHelper.SaveImageAsync(createSongDto.ArtworkFile, ImageType.Song);
+				song.ArtworkImageId = image.Id;
+			}
 
-				var map = _mapper.Map<SongDto>(song);
-				map.ArtistNames = song.Artists.Select(a => a.FullName).ToList();
-				return map;
-			
+			await _unitOfWork.GetRepository<Song>().AddAsync(song);
+			await _unitOfWork.SaveAsynsc();
+
+			var map = _mapper.Map<SongDto>(song);
+		
+			map.ArtistNames = song.Artists.Select(a => a.FullName).ToList();
+			return map;
+
 		}
 
 
@@ -153,19 +180,19 @@ namespace ServiceLayer.Services.Concrete
 			return file.Properties.Duration;
 		}
 
-		
-		public async Task<SongDto> UpdateSongAsync(UpdateSongDto updateSongDto,ClaimsPrincipal user)
+
+		public async Task<SongDto> UpdateSongAsync(UpdateSongDto updateSongDto, ClaimsPrincipal user)
 		{
 			var currentUser = await _userManager.GetUserAsync(user);
-			if (currentUser == null) throw new Exception("Istifadeci tapilmadi");
+			if (currentUser == null) throw new UserNotFoundException("Istifadeci tapilmadi");
 			var song = await _unitOfWork.GetRepository<Song>().GetAsync(x => !x.IsDeleted && x.Id == updateSongDto.Id && x.Artists.Any(x => x.Id == currentUser.Id),
 				include: x => x.Include(s => s.Artists));
 			if (song == null) throw new Exception("Mahni tapilmadi");
 			song.Title = updateSongDto.Name;
-			song.UpdatedDate= DateTime.Now;
+			song.UpdatedDate = DateTime.Now;
 			await _unitOfWork.GetRepository<Song>().UpdateAsync(song);
 			await _unitOfWork.SaveAsynsc();
-			var map= _mapper.Map<SongDto>(song);
+			var map = _mapper.Map<SongDto>(song);
 			return map;
 		}
 		public async Task RemoveSong(Guid id, ClaimsPrincipal user)

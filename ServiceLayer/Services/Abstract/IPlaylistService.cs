@@ -13,7 +13,7 @@ namespace ServiceLayer.Services.Abstract
 {
 	public interface IPlaylistService
 	{
-		Task CreatePlaylist(string name,ClaimsPrincipal user);
+		Task CreatePlaylist(CreatePlaylistDto createPlaylistDto,ClaimsPrincipal user);
 		Task<List<SongDto>> AddSongToPlaylist(Guid playlistId, Guid songId);
 		Task<List<SongDto>> RemoveSongFromPlaylist(Guid playlistId, Guid songId);
 		Task<List<SongDto>> GetAllSongsInPlaylist(Guid playlistId);

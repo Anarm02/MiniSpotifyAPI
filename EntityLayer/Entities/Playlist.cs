@@ -18,5 +18,7 @@ namespace EntityLayer.Entities
 		{
 			Duration=new TimeSpan(Songs.Sum(s=>s.Duration.Ticks));
 		}
+		public Guid? CoverImageId { get; set; }
+		public Photo CoverImage { get; set; }
 	}
 }

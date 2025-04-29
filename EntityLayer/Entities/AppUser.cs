@@ -16,5 +16,7 @@ namespace EntityLayer.Entities
 		public bool? IsEmailVerified { get; set; }
 		public ICollection<Song> Songs { get; set; }
 		public ICollection<Playlist> Playlists { get; set; } = new List<Playlist>();
+		public Guid? ProfileImageId { get; set; }   
+		public Photo ProfileImage { get; set; }
 	}
 }

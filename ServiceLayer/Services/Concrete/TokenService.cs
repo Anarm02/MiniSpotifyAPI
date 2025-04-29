@@ -24,8 +24,8 @@ namespace ServiceLayer.Services.Concrete
 
 		public TokenResponseDto GenerateToken(AppUser appUser, IList<string> roles)
 		{
-			DateTime tokenExp = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["Jwt:ExpirationMinutes"]));
-			DateTime refreshTokenExp = DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["Jwt:RefreshTokenValidity"]));
+			DateTime tokenExp = DateTime.UtcNow.AddSeconds(Convert.ToDouble(_configuration["Jwt:ExpirationMinutes"]));
+			DateTime refreshTokenExp = DateTime.UtcNow.AddSeconds(Convert.ToDouble(_configuration["Jwt:RefreshTokenValidity"]));
 
 
 			List<Claim> claims = new List<Claim>

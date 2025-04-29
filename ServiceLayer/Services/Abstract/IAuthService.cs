@@ -10,7 +10,7 @@ namespace ServiceLayer.Services.Abstract
 	public interface IAuthService
 	{
 		Task<string> Register(RegisterDto registerDto);
-		Task<string> LoginAsync(LoginDto model);
+		Task<LoginResponseDto> LoginAsync(LoginDto model);
 		Task<string> VerifyEmailAsync(string userId, string token);
 		Task LogoutAsync();
 		

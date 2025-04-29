@@ -33,7 +33,7 @@ namespace ServiceLayer.Services.Concrete
 			var songRepository = _unitOfWork.GetRepository<Song>();
 			var songs = await songRepository.GetAllAsync(
 				predicate: s => s.Title.ToLower().Contains(query) && !s.IsDeleted,
-				include: queryable => queryable.Include(s => s.Artists)
+				include: queryable => queryable.Include(s => s.Artists).Include(s=>s.ArtworkImage)
 			);
 
 			var songDtos = songs.Select(s => new SongDto
@@ -41,6 +41,7 @@ namespace ServiceLayer.Services.Concrete
 				Id = s.Id,
 				Title = s.Title,
 				FilePath = s.FilePath,
+				ImagePath = s?.ArtworkImage?.Url,
 				Duration = s.Duration,
 				ArtistNames = s.Artists.Select(a => a.FullName).ToList()
 			}).ToList();

@@ -36,24 +36,17 @@ namespace WebApi.Controllers
 		[HttpPost("Logout")]
 		public async Task<IActionResult> Logout()
 		{
-			try
-			{
+			
 				await authService.LogoutAsync();
 				return Ok("Hesabdan ugurla cixildi");
-			}
-			catch (Exception ex)
-			{
-				return BadRequest(ex.Message);
-			}
+			
 		}
 
 		[HttpPost("Login")]
 		public async Task<IActionResult> Login(LoginDto loginDto)
 		{
 			var result = await authService.LoginAsync(loginDto);
-			if (result.Contains("Token"))
-				return Ok(result);
-			return BadRequest(result);
+			return Ok(result);
 		}
 	}
 }

@@ -1,8 +1,11 @@
 ﻿using EntityLayer.DTOs.AuthDtos;
 using EntityLayer.Entities;
+using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
+using ServiceLayer.Exceptions;
 using ServiceLayer.Services.Abstract;
+using ServiceLayer.Validators.Auth;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,22 +31,21 @@ namespace ServiceLayer.Services.Concrete
 			this.signInManager = signInManager;
 			this.tokenService = tokenService;
 			this.roleManager = roleManager;
+			
 		}
 
 		public async Task<string> Register(RegisterDto model)
 		{
+		
 			var existingUser = await userManager.FindByEmailAsync(model.Email);
 			if (existingUser != null)
 			{
-				return "Bu email artıq istifadə olunub.";
+				throw new KeyNotFoundException("Bele istifadeci artiq var");
 			}
-			if (model.Password != model.ConfirmPassword)
-			{
-				return "Şifrə və təsdiq şifrəsi eyni olmalıdır.";
-			}
+			
 			var user = new AppUser
 			{
-				FullName=model.FullName,
+				FullName = model.FullName,
 				UserName = model.Email,
 				Email = model.Email,
 				IsEmailVerified = false
@@ -57,7 +59,7 @@ namespace ServiceLayer.Services.Concrete
 			await userManager.AddToRoleAsync(user, "User");
 			var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
 			var roles = await userManager.GetRolesAsync(user);
-			var jwtToken = tokenService.GenerateToken(user,roles);
+			var jwtToken = tokenService.GenerateToken(user, roles);
 			user.RefreshToken = jwtToken.RefreshToken;
 			user.RefreshTokenExpiration = jwtToken.RefreshTokenExpirationDate;
 			await userManager.UpdateAsync(user);
@@ -80,19 +82,27 @@ namespace ServiceLayer.Services.Concrete
 
 			return "Email uğurla təsdiqləndi!";
 		}
-		public async Task<string> LoginAsync(LoginDto model)
-		{
+		public async Task<LoginResponseDto> LoginAsync(LoginDto model)
+			{
+
 			AppUser? user = await userManager.FindByEmailAsync(model.Email);
-			if (user == null )
-				return "İstifadəçi tapılmadı.";
+			if (user == null)
+				throw new UserNotFoundException("User not found");
 			if (!await userManager.CheckPasswordAsync(user, model.Password))
-				return "Şifrə yanlışdır";
+				throw new UnauthorizedAccessException("Password is wrong");
 			//if ((bool)!user.IsEmailVerified)
 			//	return "Email doğrulanmayıb!";
 			var roles = await userManager.GetRolesAsync(user);
-			var token =  tokenService.GenerateToken(user,roles);
+			var token = tokenService.GenerateToken(user, roles);
 			string rolesString = string.Join(", ", roles);
-			return $"Access Token:'{token.AccessToken}'\n Refresh Token:'{token.RefreshToken}' \n Full Name:'{user.FullName}' \n Role:'{rolesString}' \n Id:'{user.Id}'";
+			return new()
+			{
+				AccessToken = token.AccessToken,
+				RefreshToken = token.RefreshToken,
+				Roles = rolesString,
+                UserName=user.FullName,
+				UserId=user.Id.ToString(),
+			};
 		}
 		private async Task SendVerificationEmail(string email, string verificationLink)
 		{

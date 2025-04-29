@@ -13,7 +13,10 @@ namespace ServiceLayer.Mappers
 	{
 		public PlaylistProfile()
 		{
-			CreateMap<PlaylistDto ,Playlist>().ReverseMap();
+			CreateMap<Playlist ,PlaylistDto>().ForMember(d => d.ImagePath,
+					   o => o.MapFrom(s => s.CoverImage != null
+											? s.CoverImage.Url
+											: null)).ReverseMap();
 			CreateMap<UpdatePlaylistDto ,Playlist>().ReverseMap();
 		}
 	}

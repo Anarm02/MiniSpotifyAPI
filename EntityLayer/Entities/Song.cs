@@ -14,5 +14,7 @@ namespace EntityLayer.Entities
 		public TimeSpan Duration { get; set; }
 		public ICollection<AppUser> Artists { get; set; } = new List<AppUser>();
 		public ICollection<Playlist> Playlists { get; set; } = new List<Playlist>();
+		public Guid? ArtworkImageId { get; set; }
+		public Photo ArtworkImage { get; set; }
 	}
 }

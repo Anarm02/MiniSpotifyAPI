@@ -74,19 +74,21 @@ namespace WebApi.Controllers
 			return Ok(new { Roles = roles });
 		}
 
+		[Authorize(Roles ="Admin")]
+		[HttpGet("[action]")]
+		public async Task<IActionResult> GetAllRoles()
+		{
+			var roles = await _userService.GetAllRolesAsync();
+			return Ok(roles);
+		}
+
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteUser(string id)
 		{
-			try
-			{
+			
 				await _userService.RemoveUser(id);
 				return Ok("Istifadeci silindi");
-			}
-			catch (Exception ex)
-			{
-
-				return BadRequest($"{ex.Message}\n ${ex.StackTrace}");
-			}
+			
 		}
 	}
 }
